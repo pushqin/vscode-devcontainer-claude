@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Read(.devcontainer/**)",
+      "Write(.devcontainer/**)",
+      "Edit(.devcontainer/**)"
+    ]
+  }
+}
