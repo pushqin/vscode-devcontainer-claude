@@ -66,6 +66,6 @@
 
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "postStartCommand": "sh -c 'sudo /usr/local/bin/init-firewall.sh && git config --local credential.helper \"\" && git remote set-url origin https://oauth2:${GH_PAT_FAMILY}@github.com/pushqin/familyInterviewer.git'",
+  "postStartCommand": "sh -c 'sudo /usr/local/bin/init-firewall.sh && git config --local credential.helper \"\" && git remote set-url origin https://oauth2:${GH_PAT_FAMILY}@{PUT_YOUR_GH_REPO_URL_HERE}.git'",
   "waitFor": "postStartCommand"
 }
