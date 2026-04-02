@@ -1,10 +1,10 @@
 {
-  "name": "Claude Code Sandbox",
+  "name": "Claude Code",
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      "TZ": "${localEnv:TZ:America/Los_Angeles}",
       "CLAUDE_CODE_VERSION": "latest",
+      "TZ": "America/Los_Angeles",
       "GIT_DELTA_VERSION": "0.18.2",
       "ZSH_IN_DOCKER_VERSION": "1.2.0"
     }
@@ -17,7 +17,7 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode"
       ],
-      "unwantedExtensions": [
+      "unwantedRecommendations": [
         "GitHub.copilot",
         "GitHub.copilot-chat",
         "GitHub.vscode-pull-request-github",
@@ -30,28 +30,70 @@
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"
         },
-        "github.authentication": false,
+        "github.gitAuthentication": false,
         "git.terminalAuthentication": false,
         "git.autofetch": false,
         "git.useIntegratedAskPass": false,
-        "workbench.startupEditor": "none",
         "authentication.providers": [],
         "terminal.integrated.defaultProfile.linux": "zsh",
-        "terminal.integrated.profiles.linux": {
-          "bash": {
-            "path": "bash",
-            "icon": "terminal-bash"
-          },
-          "zsh": {
-            "path": "zsh"
-          }
-        }
+        "settingsSync.enabled": false,
+        "remote.autoForwardPorts": false,
+        "remote.restoreForwardedPorts": false
       }
     }
   },
   "remoteUser": "node",
   "remoteEnv": {
-    "SSH_AUTH_SOCK": ""
+    "SSH_AUTH_SOCK": "",
+
+    "VSCODE_GIT_ASKPASS_NODE": "",
+    "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
+    "VSCODE_GIT_ASKPASS_MAIN": "",
+    "GIT_ASKPASS": "",
+
+    "VSCODE_IPC_HOOK": "",
+    "VSCODE_IPC_HOOK_CLI": "",
+
+    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "GIT_CONFIG_SYSTEM": "/dev/null",
+
+    "AWS_ACCESS_KEY_ID": "",
+    "AWS_SECRET_ACCESS_KEY": "",
+    "AWS_SESSION_TOKEN": "",
+    "AWS_PROFILE": "",
+    "AWS_SHARED_CREDENTIALS_FILE": "",
+    "AWS_CONFIG_FILE": "",
+
+    "AZURE_CLIENT_ID": "",
+    "AZURE_CLIENT_SECRET": "",
+    "AZURE_TENANT_ID": "",
+    "AZURE_SUBSCRIPTION_ID": "",
+    "AZURE_DEVOPS_EXT_PAT": "",
+
+    "GOOGLE_APPLICATION_CREDENTIALS": "",
+    "CLOUDSDK_CONFIG": "",
+
+    "NPM_TOKEN": "",
+    "NPM_CONFIG_USERCONFIG": "",
+    "YARN_NPM_AUTH_TOKEN": "",
+    "PIP_EXTRA_INDEX_URL": "",
+    "POETRY_HTTP_BASIC_PYPI_PASSWORD": "",
+    "NUGET_API_KEY": "",
+    "CARGO_REGISTRY_TOKEN": "",
+
+    "DOCKER_CONFIG": "",
+    "DOCKER_HOST": "",
+
+    "GPG_TTY": "",
+    "GPG_AGENT_INFO": "",
+
+    "KUBECONFIG": "",
+    "TF_TOKEN_app_terraform_io": "",
+
+    "GITHUB_TOKEN": "",
+    "GH_TOKEN": "",
+    "GITLAB_TOKEN": "",
+    "HOMEBREW_GITHUB_API_TOKEN": ""
   },
   "mounts": [
     "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
@@ -63,9 +105,6 @@
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
     "GH_PAT_FAMILY": "${localEnv:GH_PAT_FAMILY}"
   },
-
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
-  "workspaceFolder": "/workspace",
-  "postStartCommand": "sh -c 'sudo /usr/local/bin/init-firewall.sh && git config --local credential.helper \"\" && git remote set-url origin https://oauth2:${GH_PAT_FAMILY}@{PUT_YOUR_GH_REPO_URL_HERE}.git'",
-  "waitFor": "postStartCommand"
+  "postCreateCommand": "rm -f ~/.npmrc ~/.yarnrc ~/.yarnrc.yml ~/.pip/pip.conf ~/.pypirc ~/.docker/config.json ~/.kube/config ~/.nuget/NuGet.Config 2>/dev/null; echo 'Host credential files cleaned'",
+  "postStartCommand": "bash /workspace/.devcontainer/post-start.sh"
 }
