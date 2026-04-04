@@ -5,8 +5,7 @@
     "args": {
       "CLAUDE_CODE_VERSION": "latest",
       "TZ": "America/Los_Angeles",
-      "GIT_DELTA_VERSION": "0.18.2",
-      "ZSH_IN_DOCKER_VERSION": "1.2.0"
+      "GIT_DELTA_VERSION": "0.18.2"
     }
   },
   "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
@@ -106,5 +105,5 @@
     "GH_PAT_FAMILY": "${localEnv:GH_PAT_FAMILY}"
   },
   "postCreateCommand": "rm -f ~/.npmrc ~/.yarnrc ~/.yarnrc.yml ~/.pip/pip.conf ~/.pypirc ~/.docker/config.json ~/.kube/config ~/.nuget/NuGet.Config 2>/dev/null; echo 'Host credential files cleaned'",
-  "postStartCommand": "bash /workspace/.devcontainer/post-start.sh"
+  "postStartCommand": "sed 's/\\r$//' /workspace/.devcontainer/post-start.sh | bash"
 }
