@@ -34,7 +34,7 @@ RUN echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudo
 
 # --- SETUP MODE: Uncomment the line below to give full sudo access ---
 # --- Use this during initial container setup, then comment it back ---
-RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node-sudo
+# --- RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node-sudo
 
 # --- To disable: comment the line above and rebuild the container ---
 # =============================================================================

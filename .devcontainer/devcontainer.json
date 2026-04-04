@@ -9,7 +9,12 @@
       "ZSH_IN_DOCKER_VERSION": "1.2.0"
     }
   },
-  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW",
+    "--name",
+    "family-interviewer"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -45,34 +50,32 @@
   "remoteUser": "node",
   "remoteEnv": {
     "SSH_AUTH_SOCK": "",
-
     "VSCODE_GIT_ASKPASS_NODE": "",
     "VSCODE_GIT_ASKPASS_EXTRA_ARGS": "",
     "VSCODE_GIT_ASKPASS_MAIN": "",
     "GIT_ASKPASS": "",
-
     "VSCODE_IPC_HOOK": "",
     "VSCODE_IPC_HOOK_CLI": "",
-
     "GIT_CONFIG_GLOBAL": "/dev/null",
     "GIT_CONFIG_SYSTEM": "/dev/null",
-
+    "GIT_CONFIG_COUNT": "2",
+    "GIT_CONFIG_KEY_0": "safe.directory",
+    "GIT_CONFIG_VALUE_0": "/workspaces/family-interviewer",
+    "GIT_CONFIG_KEY_1": "core.fileMode",
+    "GIT_CONFIG_VALUE_1": "false",
     "AWS_ACCESS_KEY_ID": "",
     "AWS_SECRET_ACCESS_KEY": "",
     "AWS_SESSION_TOKEN": "",
     "AWS_PROFILE": "",
     "AWS_SHARED_CREDENTIALS_FILE": "",
     "AWS_CONFIG_FILE": "",
-
     "AZURE_CLIENT_ID": "",
     "AZURE_CLIENT_SECRET": "",
     "AZURE_TENANT_ID": "",
     "AZURE_SUBSCRIPTION_ID": "",
     "AZURE_DEVOPS_EXT_PAT": "",
-
     "GOOGLE_APPLICATION_CREDENTIALS": "",
     "CLOUDSDK_CONFIG": "",
-
     "NPM_TOKEN": "",
     "NPM_CONFIG_USERCONFIG": "",
     "YARN_NPM_AUTH_TOKEN": "",
@@ -80,16 +83,12 @@
     "POETRY_HTTP_BASIC_PYPI_PASSWORD": "",
     "NUGET_API_KEY": "",
     "CARGO_REGISTRY_TOKEN": "",
-
     "DOCKER_CONFIG": "",
     "DOCKER_HOST": "",
-
     "GPG_TTY": "",
     "GPG_AGENT_INFO": "",
-
     "KUBECONFIG": "",
     "TF_TOKEN_app_terraform_io": "",
-
     "GITHUB_TOKEN": "",
     "GH_TOKEN": "",
     "GITLAB_TOKEN": "",

@@ -7,12 +7,16 @@
       "Bash(git diff *)",
       "Bash(git log *)",
       "Bash(find .:*)",
+      "Bash(git push*)",
       "WebSearch"
     ],
     "deny": [
-      "Bash(git push*)",
       "Bash(git remote set-url*)",
       "Bash(git remote add*)",
+      "Bash(git remote -v*)",
+      "Bash(git config --get*)",
+      "Bash(git config -l*)",
+      "Bash(git config --list*)",
       "Bash(curl*host.docker.internal*)",
       "Bash(wget*host.docker.internal*)",
       "Bash(iptables*)",

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(///wsl.localhost/Ubuntu/opt/Auto-Claude/resources/backend/core/**)",
+      "Read(///wsl$/Ubuntu/opt/Auto-Claude/resources/backend/core/**)"
+    ]
+  }
+}

@@ -10,11 +10,11 @@ sudo /usr/local/bin/init-firewall.sh
 
 # --- Git credential isolation + remote setup ---
 # >>> EDIT THIS: Set your GitHub repo URL below <<<
-REPO_URL="github.com/YOUR_USER/YOUR_REPO.git"
+REPO_URL="github.com/pushqin/family-interviewer.git"
 
 PAT_TOKEN="${GH_PAT_FAMILY:-}"
 
-cd /workspace 2>/dev/null || true
+cd /workspaces/family-interviewer 2>/dev/null || true
 
 if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     echo "Not inside a git repository yet — skipping git configuration."
