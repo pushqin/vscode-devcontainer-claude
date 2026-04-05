@@ -116,7 +116,7 @@
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
-    "GH_PAT_FAMILY": "${localEnv:GH_PAT_FAMILY}"
+    "GH_PAT": "${localEnv:GH_PAT}"
   },
   "postCreateCommand": "rm -f ~/.npmrc ~/.yarnrc ~/.yarnrc.yml ~/.pip/pip.conf ~/.pypirc ~/.docker/config.json ~/.kube/config ~/.nuget/NuGet.Config 2>/dev/null; echo 'Host credential files cleaned'",
   "postStartCommand": "sudo /usr/local/bin/post-start.sh"

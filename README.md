@@ -10,12 +10,12 @@ An isolated devcontainer that gives AI agents (Claude Code, etc.) full autonomy 
 
    **Windows (PowerShell):**
    ```powershell
-   [System.Environment]::SetEnvironmentVariable("GH_PAT_FAMILY", "ghp_your_token_here", "User")
+   [System.Environment]::SetEnvironmentVariable("GH_PAT", "ghp_your_token_here", "User")
    ```
 
    **Linux/macOS (add to `~/.bashrc` or `~/.zshrc`):**
    ```bash
-   export GH_PAT_FAMILY="ghp_your_token_here"
+   export GH_PAT="ghp_your_token_here"
    ```
 
 3. Copy all files from this repo into your target project
@@ -81,7 +81,7 @@ Comment it back and rebuild when done.
 The token should be:
 - Scoped to **one specific repository** only
 - Given **only** Contents read/write permission
-- Passed via the `GH_PAT_FAMILY` environment variable (not stored in the container)
+- Passed via the `GH_PAT` environment variable (not stored in the container)
 - Git credential helper is disabled inside the container — no caching
 
 ## Configuration Files

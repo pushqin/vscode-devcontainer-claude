@@ -49,9 +49,9 @@ done < <(find / -xdev \( -perm -4000 -o -perm -2000 \) -type f 2>/dev/null)
 echo "[hardening] Setuid/setgid binaries stripped."
 
 # --- Git remote setup ---
-REPO_URL="github.com/pushqin/familyInterview.git"
+REPO_URL="github.com/YOUR_USER/YOUR_REPO.git"
 # Read PAT from node user's environment (sudo strips env vars)
-PAT_TOKEN=$(su - node -c 'echo $GH_PAT_FAMILY' 2>/dev/null || true)
+PAT_TOKEN=$(su - node -c 'echo $GH_PAT' 2>/dev/null || true)
 
 cd /workspace 2>/dev/null || true
 
@@ -71,7 +71,7 @@ fi
 
 if [ -z "$PAT_TOKEN" ]; then
     echo ""
-    echo "  WARNING: GH_PAT_FAMILY environment variable is not set."
+    echo "  WARNING: GH_PAT environment variable is not set."
     echo ""
 fi
 
