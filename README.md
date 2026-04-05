@@ -1,53 +1,88 @@
 # Secure Devcontainer for AI Agents
 
-An isolated devcontainer setup that gives AI agents (Claude Code, etc.) full CLI permissions inside the container while keeping your Windows host completely locked down.
+An isolated devcontainer that gives AI agents (Claude Code, etc.) full autonomy inside the container — including `--dangerously-skip-permissions` — while keeping your host locked down. All protection is OS-level: the agent runs as an unprivileged user with no sudo, immutable safeguard files, a network firewall, and sanitized credentials.
 
 ## Quick Start
 
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) or [Docker Engine](https://docs.docker.com/engine/install/) (Linux)
 
-2. Set your GitHub PAT as a Windows environment variable (scoped to your target repo only):
+2. Set your GitHub PAT as an environment variable (scoped to your target repo only):
+
+   **Windows (PowerShell):**
    ```powershell
    [System.Environment]::SetEnvironmentVariable("GH_PAT_FAMILY", "ghp_your_token_here", "User")
    ```
 
+   **Linux/macOS (add to `~/.bashrc` or `~/.zshrc`):**
+   ```bash
+   export GH_PAT_FAMILY="ghp_your_token_here"
+   ```
+
 3. Copy all files from this repo into your target project
 
-4. Edit `.devcontainer/post-start.sh` — change the repo URL:
+4. Edit `.devcontainer/post-start.sh` on the host — change the repo URL:
    ```bash
    REPO_URL="github.com/youruser/yourrepo.git"
    ```
 
 5. Open the project in VS Code and select "Reopen in Container"
 
-## Setup Mode vs Locked Mode
+6. Run `claude login` to authenticate, then `claude --dangerously-skip-permissions`
 
-Two settings profiles control what the AI agent can do:
+## How It Works
 
-| Mode | File | Sudo |
-|------|------|------|
-| Locked (default) | `.claude/settings.locked.json` | Blocked |
-| Setup | `.claude/settings.setup.json` | Allowed |
+Claude runs with `--dangerously-skip-permissions`, which bypasses Claude's own permission system entirely. Protection comes from three layers:
 
-**Enable setup mode** (to install packages, configure the container):
-```bash
-cp .claude/settings.setup.json .claude/settings.json
+### 1. OS-Level Hardening (post-start.sh)
+
+On every container start, a root-owned script enforces:
+
+- **No sudo** — sudoers config is `chattr +i` (immutable), only allows the firewall and post-start scripts
+- **Immutable safeguard files** — startup scripts and managed settings are `chattr +i`
+- **Locked user database** — `/etc/passwd`, `/etc/shadow`, `/etc/group` are `chattr +i`
+- **Setuid binaries stripped** — prevents privilege escalation via suid exploits
+
+### 2. Managed Settings (/etc/claude-code/managed-settings.json)
+
+Root-owned, read-only, immutable. Deny rules here are enforced by Claude Code regardless of any other settings. Blocks:
+
+- `sudo`, `chattr`, `iptables`, `mount/umount`
+- Reading/writing `.devcontainer/` and `/etc/claude-code/`
+- Reading/writing the startup scripts
+- `git remote set-url/add` (prevents PAT exfiltration)
+- Probing `host.docker.internal`
+
+### 3. Network Firewall (init-firewall.sh)
+
+- Full internet access for the agent to work
+- Dangerous host ports blocked: Docker API, databases (PostgreSQL, MySQL, Redis, MongoDB, Elasticsearch), admin panels
+- `host.docker.internal` dangerous ports blocked
+
+## Setup Mode
+
+To install packages or configure the container during initial setup, uncomment the full-sudo line in the Dockerfile and rebuild:
+
+```dockerfile
+# In .devcontainer/Dockerfile, uncomment:
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node-sudo
 ```
 
-**Lock down after setup**:
-```bash
-cp .claude/settings.locked.json .claude/settings.json
-```
-
-The Dockerfile also has a commentable section for OS-level sudo access. Uncomment the `node-sudo` line and rebuild the container for full sudo, then comment it back when done.
+Comment it back and rebuild when done.
 
 ## PAT Token
 
-The GitHub PAT should be:
+1. Go to [GitHub Settings > Developer settings > Fine-grained tokens](https://github.com/settings/tokens?type=beta)
+2. Click **Generate new token**
+3. Set **Resource owner** to your account
+4. Under **Repository access**, select **Only select repositories** and pick your target repo
+5. Under **Permissions > Repository permissions**, set **Contents** to **Read and write** (this covers push/pull)
+6. Generate the token and copy it
+
+The token should be:
 - Scoped to **one specific repository** only
-- Given **only** commit and push permissions
+- Given **only** Contents read/write permission
 - Passed via the `GH_PAT_FAMILY` environment variable (not stored in the container)
-- Git credential helper is disabled — no caching
+- Git credential helper is disabled inside the container — no caching
 
 ## Configuration Files
 
@@ -56,47 +91,28 @@ The GitHub PAT should be:
 | `.devcontainer/devcontainer.json` | Container config, env var sanitization, VS Code settings |
 | `.devcontainer/Dockerfile` | Base image, packages, sudo configuration |
 | `.devcontainer/init-firewall.sh` | Blocks dangerous host ports |
-| `.devcontainer/post-start.sh` | Firewall init + git remote setup with PAT |
-| `.claude/settings.json` | Active Claude permissions (locked by default) |
-| `.claude/settings.locked.json` | Locked profile (sudo blocked) |
-| `.claude/settings.setup.json` | Setup profile (sudo allowed) |
+| `.devcontainer/post-start.sh` | OS-level hardening + git remote setup |
+| `.devcontainer/managed-settings.json` | Claude Code deny rules (baked into image) |
 
----
+## Credential Isolation
 
-## Security Details
+The following are sanitized or blocked from entering the container:
 
-### Credentials blocked from leaking into container
-- SSH agent forwarding (disabled)
+- SSH agent forwarding
 - Git config from host (`GIT_CONFIG_GLOBAL=/dev/null`)
-- VS Code git credential injection (`VSCODE_GIT_ASKPASS_*` cleared)
-- VS Code IPC sockets (`VSCODE_IPC_HOOK` cleared)
-- Cloud CLI credentials (AWS, Azure, GCP env vars cleared)
-- Package manager tokens (NPM, pip, NuGet, Cargo cleared)
-- Docker credential store (`DOCKER_CONFIG` cleared)
-- GPG keys (`GPG_TTY`, `GPG_AGENT_INFO` cleared)
-- Kubernetes/Terraform credentials cleared
-- GitHub/GitLab tokens cleared
+- VS Code git credential injection (`VSCODE_GIT_ASKPASS_*`)
+- VS Code IPC sockets
+- Cloud CLI credentials (AWS, Azure, GCP)
+- Package manager tokens (NPM, pip, NuGet, Cargo)
+- Docker credential store
+- GPG keys
+- Kubernetes/Terraform credentials
+- GitHub/GitLab tokens
 - Host credential files (`~/.npmrc`, `~/.docker/config.json`, etc.) deleted on container creation
 
-### Network isolation
-- Full internet access for the agent to work
-- Dangerous host ports blocked (Docker API, databases, admin panels)
-- `host.docker.internal` access blocked for Claude via settings deny rules
+## VS Code Hardening
 
-### File system isolation
-- `.devcontainer/` folder mounted read-only — agent cannot modify its own sandbox
-- Claude settings deny read/write/edit of `.devcontainer/**`
-
-### Agent restrictions (`.claude/settings.json`)
-- `git push` blocked (use manually or enable explicitly)
-- `git remote set-url` / `git remote add` blocked (prevents PAT exfiltration to another repo)
-- `sudo` blocked in locked mode
-- `iptables` / `ipset` blocked (prevents firewall tampering)
-- Probing `host.docker.internal` via curl/wget blocked
-
-### VS Code hardening
-- GitHub Copilot disabled
-- GitHub remote extensions disabled
+- `.devcontainer/` hidden from file explorer and marked read-only inside the container
+- GitHub Copilot and remote extensions blocked
 - Authentication providers disabled
-- Settings sync disabled
-- Auto port forwarding disabled
+- Settings sync and auto port forwarding disabled

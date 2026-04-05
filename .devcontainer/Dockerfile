@@ -77,27 +77,32 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 
 # =============================================================================
-# 4. FIREWALL
+# 4. FIREWALL & HARDENING SCRIPTS
 # =============================================================================
 
 COPY --chown=root:root init-firewall.sh /usr/local/bin/init-firewall.sh
 RUN sed -i 's/\r$//' /usr/local/bin/init-firewall.sh && chmod +x /usr/local/bin/init-firewall.sh
 
+COPY --chown=root:root post-start.sh /usr/local/bin/post-start.sh
+RUN sed -i 's/\r$//' /usr/local/bin/post-start.sh && chmod 755 /usr/local/bin/post-start.sh
+
+# Managed settings — root-owned, read-only. Claude Code reads these but cannot
+# modify them. Deny rules here are enforced regardless of other settings.
+COPY --chown=root:root managed-settings.json /etc/claude-code/managed-settings.json
+RUN sed -i 's/\r$//' /etc/claude-code/managed-settings.json \
+    && chmod 444 /etc/claude-code/managed-settings.json
+
 
 # =============================================================================
-# 5. SUDO ACCESS CONFIGURATION
+# 5. SUDO ACCESS
 # =============================================================================
-#
-# The firewall script ALWAYS needs sudo (do not comment this line):
-RUN echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/firewall
-#
-# --- SETUP MODE ---
-# Uncomment the line below to give full sudo access.
-# Use this during initial container setup, then comment it back and rebuild.
-#
+
+# post-start.sh runs as root on every container start (firewall + hardening)
+RUN echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/firewall \
+    && echo "node ALL=(root) NOPASSWD: /usr/local/bin/post-start.sh" >> /etc/sudoers.d/firewall
+
+# Uncomment for full sudo during initial setup, then comment back and rebuild:
 # RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node-sudo
-#
-# =============================================================================
 
 
 # =============================================================================

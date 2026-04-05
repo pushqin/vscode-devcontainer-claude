@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo*)",
+      "Bash(chattr*)",
+      "Bash(iptables*)",
+      "Bash(ipset*)",
+      "Bash(mount*)",
+      "Bash(umount*)",
+      "Bash(chmod*/usr/local/bin/init-firewall*)",
+      "Bash(chmod*/usr/local/bin/post-start*)",
+      "Bash(chmod*/etc/sudoers*)",
+      "Bash(chmod*/etc/claude-code*)",
+      "Bash(git remote set-url*)",
+      "Bash(git remote add*)",
+      "Bash(curl*host.docker.internal*)",
+      "Bash(wget*host.docker.internal*)",
+      "Read(.devcontainer/**)",
+      "Write(.devcontainer/**)",
+      "Edit(.devcontainer/**)",
+      "Read(/etc/claude-code/**)",
+      "Write(/etc/claude-code/**)",
+      "Edit(/etc/claude-code/**)",
+      "Read(/usr/local/bin/init-firewall*)",
+      "Read(/usr/local/bin/post-start*)",
+      "Write(/usr/local/bin/init-firewall*)",
+      "Write(/usr/local/bin/post-start*)",
+      "Edit(/usr/local/bin/init-firewall*)",
+      "Edit(/usr/local/bin/post-start*)"
+    ]
+  }
+}

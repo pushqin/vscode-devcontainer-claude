@@ -37,10 +37,24 @@
         "terminal.integrated.defaultProfile.linux": "zsh",
         "settingsSync.enabled": false,
         "remote.autoForwardPorts": false,
-        "remote.restoreForwardedPorts": false
+        "remote.restoreForwardedPorts": false,
+        "files.readonlyInclude": {
+          "/workspace/.devcontainer/**": true
+        },
+        "[shellscript]": {
+          "editor.formatOnSave": false
+        },
+        "files.watcherExclude": {
+          "/workspace/.devcontainer/**": true
+        },
+        "files.exclude": {
+          "/workspace/.devcontainer/**": true
+        }
       }
     }
   },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
   "remoteUser": "node",
   "remoteEnv": {
     "SSH_AUTH_SOCK": "",
@@ -95,8 +109,8 @@
     "HOMEBREW_GITHUB_API_TOKEN": ""
   },
   "mounts": [
-    "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=claude-code-bashhistory,target=/commandhistory,type=volume",
+    "source=claude-code-config,target=/home/node/.claude,type=volume",
     "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly"
   ],
   "containerEnv": {
@@ -105,5 +119,5 @@
     "GH_PAT_FAMILY": "${localEnv:GH_PAT_FAMILY}"
   },
   "postCreateCommand": "rm -f ~/.npmrc ~/.yarnrc ~/.yarnrc.yml ~/.pip/pip.conf ~/.pypirc ~/.docker/config.json ~/.kube/config ~/.nuget/NuGet.Config 2>/dev/null; echo 'Host credential files cleaned'",
-  "postStartCommand": "sed 's/\\r$//' /workspace/.devcontainer/post-start.sh | bash"
+  "postStartCommand": "sudo /usr/local/bin/post-start.sh"
 }
