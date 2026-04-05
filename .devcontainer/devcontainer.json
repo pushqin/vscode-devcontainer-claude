@@ -67,7 +67,7 @@
     "VSCODE_IPC_HOOK": "",
     "VSCODE_IPC_HOOK_CLI": "",
 
-    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "GIT_CONFIG_GLOBAL": "/home/node/.gitconfig-safe",
     "GIT_CONFIG_SYSTEM": "/dev/null",
 
     "AWS_ACCESS_KEY_ID": "",

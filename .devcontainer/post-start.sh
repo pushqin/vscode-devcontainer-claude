@@ -12,6 +12,11 @@ set -euo pipefail
 # --- Fix volume ownership ---
 chown -R node:node /home/node/.claude
 
+# --- Git safe directory (mounted workspace has different owner) ---
+# GIT_CONFIG_GLOBAL points to this file (host gitconfig is blocked via /dev/null override)
+printf '[safe]\n\tdirectory = /workspace\n' > /home/node/.gitconfig-safe
+chown node:node /home/node/.gitconfig-safe
+
 # --- Immutable safeguard files ---
 chattr +i /usr/local/bin/init-firewall.sh 2>/dev/null || true
 chattr +i /usr/local/bin/post-start.sh 2>/dev/null || true
@@ -44,8 +49,9 @@ done < <(find / -xdev \( -perm -4000 -o -perm -2000 \) -type f 2>/dev/null)
 echo "[hardening] Setuid/setgid binaries stripped."
 
 # --- Git remote setup ---
-REPO_URL="github.com/YOUR_USER/YOUR_REPO.git"
-PAT_TOKEN="${GH_PAT_FAMILY:-}"
+REPO_URL="github.com/pushqin/familyInterview.git"
+# Read PAT from node user's environment (sudo strips env vars)
+PAT_TOKEN=$(su - node -c 'echo $GH_PAT_FAMILY' 2>/dev/null || true)
 
 cd /workspace 2>/dev/null || true
 
