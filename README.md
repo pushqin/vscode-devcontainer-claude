@@ -1,8 +1,8 @@
-# Secure Devcontainer for AI Agents
+# Secure .NET 10 Devcontainer for AI Agents
 
-An isolated devcontainer that gives AI agents (Claude Code, etc.) full autonomy inside the container — including `--dangerously-skip-permissions` — while keeping your host locked down. All protection is OS-level: the agent runs as an unprivileged user with no sudo, immutable safeguard files, a network firewall, and sanitized credentials.
+An isolated devcontainer that gives AI agents (Claude Code, etc.) full autonomy inside a .NET 10 SDK environment — including `--dangerously-skip-permissions` — while keeping your host locked down. All protection is OS-level: the agent runs as an unprivileged user with no sudo, immutable safeguard files, a network firewall, and sanitized credentials.
 
-Works with any git host (GitHub, GitLab, Bitbucket, Azure DevOps, self-hosted Gitea, etc.) — the setup is git-host agnostic.
+Built on `mcr.microsoft.com/dotnet/sdk:10.0` with Node.js 22 LTS layered on for Claude Code itself. Works with any git host (GitHub, GitLab, Bitbucket, Azure DevOps, self-hosted Gitea, etc.) — the setup is git-host agnostic.
 
 ## Quick Start
 
@@ -28,11 +28,51 @@ Works with any git host (GitHub, GitLab, Bitbucket, Azure DevOps, self-hosted Gi
    - Azure DevOps: `dev.azure.com/org/project/_git/repo`
    - Self-hosted: `git.example.com/group/repo.git`
 
-3. Copy the `.devcontainer/` folder from this repo into your target project
+3. Copy the `.devcontainer/` folder from this repo into your target .NET 10 project
 
 4. Open the project in VS Code and select "Reopen in Container"
 
 5. Run `claude login` to authenticate, then `claude --dangerously-skip-permissions`
+
+6. Build / run the .NET project as usual:
+   ```bash
+   dotnet restore
+   dotnet build
+   dotnet run --project src/YourProject
+   ```
+
+## What's in the Container
+
+- **.NET 10 SDK** (`mcr.microsoft.com/dotnet/sdk:10.0`) — `dotnet` CLI, MSBuild, NuGet
+- **Node.js 22 LTS** — required runtime for Claude Code itself
+- **Claude Code** (`@anthropic-ai/claude-code`) installed globally
+- **Playwright + Chrome** — for browser-based testing via MCP
+- **Git + GitHub CLI** (`git`, `gh`)
+- **Shell**: zsh with oh-my-zsh, autosuggestions, syntax highlighting, fzf, zoxide
+- **Modern CLI**: ripgrep, fd, bat, eza, git-delta
+- **Telemetry off**: `DOTNET_CLI_TELEMETRY_OPTOUT=1`, `DOTNET_NOLOGO=1`
+
+## Port Forwarding
+
+The following ports are forwarded from the container to the host for local browser access:
+
+| Port | Purpose |
+|------|---------|
+| 5000 | ASP.NET Core / Kestrel HTTP default |
+| 5001 | ASP.NET Core / Kestrel HTTPS default |
+| 5277, 5278, 5279 | Umbraco `launchSettings.json` defaults |
+
+Auto port forwarding is disabled — only the ports listed above are forwarded. Add more in `.devcontainer/devcontainer.json` (`forwardPorts`) if your project uses different ones.
+
+## Running Multiple Devcontainers
+
+You can run several isolated devcontainers in parallel (one per project) without conflicts:
+
+- Container name includes the project folder name: `Claude Code .NET 10 - <project-folder>`
+- Per-project volumes for bash history, Claude config, and the NuGet packages cache (`claude-code-<project>-bashhistory`, `…-config`, `…-nuget`)
+- Each container needs its own `claude login` (configs are not shared)
+
+If you want different `REPO_PAT` / `REPO_URL` values per project, set them in a shell scoped to that project before launching VS Code, or use a `.env` loader. The host env vars are read at container start.
 
 ## How It Works
 
@@ -59,7 +99,7 @@ Root-owned, read-only, immutable. Deny rules here are enforced by Claude Code re
 
 ### 3. Network Firewall (init-firewall.sh)
 
-- Full internet access for the agent to work
+- Full internet access for the agent (NuGet, npm, GitHub, etc.)
 - Dangerous host ports blocked: Docker API, databases (PostgreSQL, MySQL, Redis, MongoDB, Elasticsearch), admin panels
 - `host.docker.internal` dangerous ports blocked
 
@@ -69,7 +109,7 @@ To install packages or configure the container during initial setup, uncomment t
 
 ```dockerfile
 # In .devcontainer/Dockerfile, uncomment:
-RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node-sudo
+RUN echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode-sudo
 ```
 
 Comment it back and rebuild when done.
@@ -94,8 +134,8 @@ The token should be:
 
 | File | Purpose |
 |------|---------|
-| `.devcontainer/devcontainer.json` | Container config, env var sanitization, per-project volumes, VS Code settings |
-| `.devcontainer/Dockerfile` | Base image, packages, sudo configuration |
+| `.devcontainer/devcontainer.json` | Container config, env var sanitization, per-project volumes, port forwarding |
+| `.devcontainer/Dockerfile` | .NET 10 SDK base + Node + Claude Code + hardening |
 | `.devcontainer/init-firewall.sh` | Blocks dangerous host ports |
 | `.devcontainer/post-start.sh` | OS-level hardening + git remote setup (reads `REPO_URL` / `REPO_PAT` from env) |
 | `.devcontainer/managed-settings.json` | Claude Code deny rules (baked into image) |
@@ -114,9 +154,15 @@ The following are sanitized or blocked from entering the container:
 - GPG keys
 - Kubernetes/Terraform credentials
 - Git host tokens (`GITHUB_TOKEN`, `GH_TOKEN`, `GITLAB_TOKEN`, etc.)
-- Host credential files (`~/.npmrc`, `~/.docker/config.json`, etc.) deleted on container creation
+- Host credential files (`~/.npmrc`, `~/.docker/config.json`, `~/.nuget/NuGet.Config`, etc.) deleted on container creation
 
 Only `REPO_PAT` and `REPO_URL` are explicitly forwarded to the container.
+
+## NuGet Configuration
+
+The container starts with no host-side NuGet credentials. Add per-project `NuGet.Config` files at your repo root if you need private feeds — the agent can read these from `/workspace` (they're committed alongside the code), but cannot reach into the host's `~/.nuget/NuGet.Config`.
+
+The NuGet package cache (`~/.nuget/packages`) is stored in a per-project named volume, so restores survive container rebuilds and don't collide between projects.
 
 ## VS Code Hardening
 
@@ -124,3 +170,4 @@ Only `REPO_PAT` and `REPO_URL` are explicitly forwarded to the container.
 - GitHub Copilot and remote extensions blocked
 - Authentication providers disabled
 - Settings sync and auto port forwarding disabled
+- C# Dev Kit + C# extensions pre-installed

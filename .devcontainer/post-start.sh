@@ -10,12 +10,14 @@ set -euo pipefail
 /usr/local/bin/init-firewall.sh
 
 # --- Fix volume ownership ---
-chown -R node:node /home/node/.claude
+chown -R vscode:vscode /home/vscode/.claude
+mkdir -p /home/vscode/.nuget/packages
+chown -R vscode:vscode /home/vscode/.nuget
 
 # --- Git safe directory (mounted workspace has different owner) ---
 # GIT_CONFIG_GLOBAL points to this file (host gitconfig is blocked via /dev/null override)
-printf '[safe]\n\tdirectory = /workspace\n' > /home/node/.gitconfig-safe
-chown node:node /home/node/.gitconfig-safe
+printf '[safe]\n\tdirectory = /workspace\n' > /home/vscode/.gitconfig-safe
+chown vscode:vscode /home/vscode/.gitconfig-safe
 
 # --- Immutable safeguard files ---
 chattr +i /usr/local/bin/init-firewall.sh 2>/dev/null || true
@@ -50,9 +52,9 @@ echo "[hardening] Setuid/setgid binaries stripped."
 
 # --- Git remote setup ---
 # REPO_URL and REPO_PAT come from the host env via devcontainer.json.
-# sudo strips env vars, so read them from the node user's environment.
-REPO_URL=$(su - node -c 'echo $REPO_URL' 2>/dev/null || true)
-PAT_TOKEN=$(su - node -c 'echo $REPO_PAT' 2>/dev/null || true)
+# sudo strips env vars, so read them from the vscode user's environment.
+REPO_URL=$(su - vscode -c 'echo $REPO_URL' 2>/dev/null || true)
+PAT_TOKEN=$(su - vscode -c 'echo $REPO_PAT' 2>/dev/null || true)
 
 cd /workspace 2>/dev/null || true
 
@@ -62,7 +64,7 @@ if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     exit 0
 fi
 
-su - node -c "cd /workspace && git config --local credential.helper ''"
+su - vscode -c "cd /workspace && git config --local credential.helper ''"
 
 if [ -z "$REPO_URL" ]; then
     echo ""
@@ -77,7 +79,7 @@ if [ -z "$PAT_TOKEN" ]; then
 fi
 
 if [ -n "$REPO_URL" ] && [ -n "$PAT_TOKEN" ]; then
-    su - node -c "cd /workspace && git remote set-url origin 'https://oauth2:${PAT_TOKEN}@${REPO_URL}'"
+    su - vscode -c "cd /workspace && git remote set-url origin 'https://oauth2:${PAT_TOKEN}@${REPO_URL}'"
     echo "Git remote configured: https://oauth2:****@${REPO_URL}"
 else
     echo "Skipping git remote setup (missing repo URL or PAT token)."

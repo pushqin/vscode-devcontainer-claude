@@ -1,24 +1,65 @@
-FROM node:24
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 ARG CLAUDE_CODE_VERSION=latest
 ARG TZ=America/Los_Angeles
 ARG GIT_DELTA_VERSION=0.18.2
+ARG NODE_MAJOR=22
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=1000
 
 
 # =============================================================================
-# 1. SYSTEM PACKAGES
+# 1. NON-ROOT USER
+# =============================================================================
+# The .NET SDK image ships with a pre-existing `app` user at UID/GID 1000.
+# Reuse it by renaming to ${USERNAME} so the workspace bind mount lines up
+# with the host's UID 1000 without colliding on group/user creation.
+
+RUN set -eux; \
+    if getent group ${USER_GID} >/dev/null; then \
+        existing_group=$(getent group ${USER_GID} | cut -d: -f1); \
+        if [ "${existing_group}" != "${USERNAME}" ]; then \
+            groupmod -n ${USERNAME} "${existing_group}"; \
+        fi; \
+    else \
+        groupadd --gid ${USER_GID} ${USERNAME}; \
+    fi; \
+    if getent passwd ${USER_UID} >/dev/null; then \
+        existing_user=$(getent passwd ${USER_UID} | cut -d: -f1); \
+        if [ "${existing_user}" != "${USERNAME}" ]; then \
+            usermod -l ${USERNAME} -d /home/${USERNAME} -m -s /bin/bash "${existing_user}"; \
+        fi; \
+        usermod -g ${USER_GID} ${USERNAME}; \
+    else \
+        useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME}; \
+    fi
+
+
+# =============================================================================
+# 2. SYSTEM PACKAGES
 # =============================================================================
 
 # Core tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
-    less procps sudo man-db unzip gnupg2 nano vim jq \
+    curl ca-certificates less procps sudo man-db unzip gnupg2 nano vim jq \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Git & GitHub
+# Git & GitHub CLI
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
-    git gh \
+    git \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+       | gpg --dearmor -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+       > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends gh \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Networking & firewall
@@ -42,14 +83,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && ln -sf /usr/bin/fdfind /usr/bin/fd
 
 
-
 # =============================================================================
-# 2. ADDITIONAL TOOL INSTALLS
+# 3. ADDITIONAL TOOL INSTALLS
 # =============================================================================
 
 # eza - modern ls replacement with icons and git integration
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
+RUN curl -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc \
        | gpg --dearmor -o /etc/apt/keyrings/gierens.gpg \
     && echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" \
        > /etc/apt/sources.list.d/gierens.list \
@@ -71,17 +110,23 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 
 # =============================================================================
-# 3. CLAUDE CODE
+# 4. NODE.JS + CLAUDE CODE
 # =============================================================================
+# Claude Code is distributed as an npm package — install Node.js alongside
+# the .NET SDK so the agent itself can run inside the container.
+
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
-# Playwright MCP - install Chrome and its dependencies
+# Playwright MCP - install Chrome and its dependencies for browser-based testing
 RUN npx playwright install --with-deps chrome
 
 
 # =============================================================================
-# 4. FIREWALL & HARDENING SCRIPTS
+# 5. FIREWALL & HARDENING SCRIPTS
 # =============================================================================
 
 COPY --chown=root:root init-firewall.sh /usr/local/bin/init-firewall.sh
@@ -98,26 +143,26 @@ RUN sed -i 's/\r$//' /etc/claude-code/managed-settings.json \
 
 
 # =============================================================================
-# 5. SUDO ACCESS
+# 6. SUDO ACCESS
 # =============================================================================
 
 # post-start.sh runs as root on every container start (firewall + hardening)
-RUN echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/firewall \
-    && echo "node ALL=(root) NOPASSWD: /usr/local/bin/post-start.sh" >> /etc/sudoers.d/firewall
+RUN echo "${USERNAME} ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/firewall \
+    && echo "${USERNAME} ALL=(root) NOPASSWD: /usr/local/bin/post-start.sh" >> /etc/sudoers.d/firewall
 
 # Uncomment for full sudo during initial setup, then comment back and rebuild:
-# RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node-sudo
+# RUN echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vscode-sudo
 
 
 # =============================================================================
-# 6. USER & SHELL SETUP
+# 7. USER & SHELL SETUP
 # =============================================================================
 
 # Set default shell to zsh
-RUN chsh -s /usr/bin/zsh node
+RUN chsh -s /usr/bin/zsh ${USERNAME}
 
 # Switch to non-root user
-USER node
+USER ${USERNAME}
 WORKDIR /workspace
 
 # Install oh-my-zsh
@@ -134,14 +179,18 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions \
 
 # Configure plugins and aliases in .zshrc
 # Using printf to avoid Windows line-ending issues
-RUN sed -i 's/plugins=(git)/plugins=(git fzf gh docker colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting you-should-use)/' ${HOME}/.zshrc \
+RUN sed -i 's/plugins=(git)/plugins=(git fzf gh docker dotnet colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting you-should-use)/' ${HOME}/.zshrc \
     && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n' >> ${HOME}/.zshrc
 
 
 # =============================================================================
-# 7. ENVIRONMENT
+# 8. ENVIRONMENT
 # =============================================================================
 
 ENV EDITOR=nano
 ENV VISUAL=nano
 ENV SHELL=/usr/bin/zsh
+# Disable .NET telemetry and first-run greeting noise inside the agent's shell
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_NOLOGO=1
+ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
