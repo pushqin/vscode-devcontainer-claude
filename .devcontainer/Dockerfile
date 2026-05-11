@@ -42,6 +42,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && ln -sf /usr/bin/fdfind /usr/bin/fd
 
 
+
 # =============================================================================
 # 2. ADDITIONAL TOOL INSTALLS
 # =============================================================================
@@ -74,6 +75,9 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # =============================================================================
 
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+
+# Playwright MCP - install Chrome and its dependencies
+RUN npx playwright install --with-deps chrome
 
 
 # =============================================================================
