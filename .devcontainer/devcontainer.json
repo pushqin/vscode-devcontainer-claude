@@ -1,5 +1,5 @@
 {
-  "name": "Claude Code",
+  "name": "Claude Code - ${localWorkspaceFolderBasename}",
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
@@ -109,14 +109,15 @@
     "HOMEBREW_GITHUB_API_TOKEN": ""
   },
   "mounts": [
-    "source=claude-code-bashhistory,target=/commandhistory,type=volume",
-    "source=claude-code-config,target=/home/node/.claude,type=volume",
+    "source=claude-code-${localWorkspaceFolderBasename}-bashhistory,target=/commandhistory,type=volume",
+    "source=claude-code-${localWorkspaceFolderBasename}-config,target=/home/node/.claude,type=volume",
     "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly"
   ],
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
-    "GH_PAT": "${localEnv:GH_PAT}"
+    "REPO_PAT": "${localEnv:REPO_PAT}",
+    "REPO_URL": "${localEnv:REPO_URL}"
   },
   "postCreateCommand": "rm -f ~/.npmrc ~/.yarnrc ~/.yarnrc.yml ~/.pip/pip.conf ~/.pypirc ~/.docker/config.json ~/.kube/config ~/.nuget/NuGet.Config 2>/dev/null; echo 'Host credential files cleaned'",
   "postStartCommand": "sudo /usr/local/bin/post-start.sh"

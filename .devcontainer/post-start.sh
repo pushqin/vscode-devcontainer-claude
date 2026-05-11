@@ -49,9 +49,10 @@ done < <(find / -xdev \( -perm -4000 -o -perm -2000 \) -type f 2>/dev/null)
 echo "[hardening] Setuid/setgid binaries stripped."
 
 # --- Git remote setup ---
-REPO_URL="github.com/YOUR_USER/YOUR_REPO.git"
-# Read PAT from node user's environment (sudo strips env vars)
-PAT_TOKEN=$(su - node -c 'echo $GH_PAT' 2>/dev/null || true)
+# REPO_URL and REPO_PAT come from the host env via devcontainer.json.
+# sudo strips env vars, so read them from the node user's environment.
+REPO_URL=$(su - node -c 'echo $REPO_URL' 2>/dev/null || true)
+PAT_TOKEN=$(su - node -c 'echo $REPO_PAT' 2>/dev/null || true)
 
 cd /workspace 2>/dev/null || true
 
@@ -63,19 +64,19 @@ fi
 
 su - node -c "cd /workspace && git config --local credential.helper ''"
 
-if [ "$REPO_URL" = "github.com/YOUR_USER/YOUR_REPO.git" ]; then
+if [ -z "$REPO_URL" ]; then
     echo ""
-    echo "  WARNING: REPO_URL not configured in post-start.sh"
+    echo "  WARNING: REPO_URL environment variable is not set."
     echo ""
 fi
 
 if [ -z "$PAT_TOKEN" ]; then
     echo ""
-    echo "  WARNING: GH_PAT environment variable is not set."
+    echo "  WARNING: REPO_PAT environment variable is not set."
     echo ""
 fi
 
-if [ "$REPO_URL" != "github.com/YOUR_USER/YOUR_REPO.git" ] && [ -n "$PAT_TOKEN" ]; then
+if [ -n "$REPO_URL" ] && [ -n "$PAT_TOKEN" ]; then
     su - node -c "cd /workspace && git remote set-url origin 'https://oauth2:${PAT_TOKEN}@${REPO_URL}'"
     echo "Git remote configured: https://oauth2:****@${REPO_URL}"
 else
