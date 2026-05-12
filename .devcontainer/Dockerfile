@@ -4,6 +4,7 @@ ARG CLAUDE_CODE_VERSION=latest
 ARG TZ=America/Los_Angeles
 ARG GIT_DELTA_VERSION=0.18.2
 ARG NODE_MAJOR=22
+ARG FZF_VERSION=0.56.3
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=1000
@@ -71,8 +72,15 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # Shell
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
-    zsh fzf \
+    zsh \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# fzf — install from upstream releases. Debian 13 ships an older fzf without
+# the `fzf --zsh` integration mode (added in 0.48).
+RUN curl -fsSL https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
+        | tar -xz -C /usr/local/bin \
+    && chmod +x /usr/local/bin/fzf
+
 
 # Modern CLI replacements
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -178,9 +186,12 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions \
         ${HOME}/.oh-my-zsh/custom/plugins/you-should-use
 
 # Configure plugins and aliases in .zshrc
-# Using printf to avoid Windows line-ending issues
-RUN sed -i 's/plugins=(git)/plugins=(git fzf gh docker dotnet colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting you-should-use)/' ${HOME}/.zshrc \
-    && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n' >> ${HOME}/.zshrc
+# Using printf to avoid Windows line-ending issues.
+# Note: fzf is NOT in the oh-my-zsh plugin list — that plugin auto-detects
+# Debian's package layout and sources files from /usr/share/doc/fzf/examples
+# which our upstream binary doesn't ship. We use `fzf --zsh` directly instead.
+RUN sed -i 's/plugins=(git)/plugins=(git gh docker dotnet colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting you-should-use)/' ${HOME}/.zshrc \
+    && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- fzf (native integration) ---\neval "$(fzf --zsh)"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n' >> ${HOME}/.zshrc
 
 
 # =============================================================================
