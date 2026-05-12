@@ -14,6 +14,16 @@ chown -R vscode:vscode /home/vscode/.claude
 mkdir -p /home/vscode/.nuget/packages
 chown -R vscode:vscode /home/vscode/.nuget
 
+# --- Seed default Claude config (first-time only) ---
+# Volume is empty on first start; copy baked-in defaults so the user doesn't
+# have to re-configure plugins, theme, etc. To re-seed, delete the named volume
+# (claude-code-<workspace>-config) and rebuild.
+if [ ! -f /home/vscode/.claude/settings.json ] && [ -d /etc/claude-code-defaults ]; then
+    cp -rn /etc/claude-code-defaults/. /home/vscode/.claude/
+    chown -R vscode:vscode /home/vscode/.claude
+    echo "[seed] Default Claude config seeded into /home/vscode/.claude."
+fi
+
 # --- Git safe directory (mounted workspace has different owner) ---
 # GIT_CONFIG_GLOBAL points to this file (host gitconfig is blocked via /dev/null override)
 printf '[safe]\n\tdirectory = /workspace\n' > /home/vscode/.gitconfig-safe
