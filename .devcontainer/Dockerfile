@@ -96,6 +96,15 @@ COPY --chown=root:root managed-settings.json /etc/claude-code/managed-settings.j
 RUN sed -i 's/\r$//' /etc/claude-code/managed-settings.json \
     && chmod 444 /etc/claude-code/managed-settings.json
 
+# Claude Code default user config — seeded into the named volume by
+# post-start.sh on first container start (when ~/.claude/settings.json is
+# absent). Unlike managed-settings, these are not enforced — the user can
+# override anything after seeding by editing files in /home/node/.claude.
+COPY --chown=root:root claude-config/ /etc/claude-code-defaults/
+RUN find /etc/claude-code-defaults -type f -exec sed -i 's/\r$//' {} \; \
+    && chmod -R a=r /etc/claude-code-defaults \
+    && find /etc/claude-code-defaults -type d -exec chmod a+x {} \;
+
 
 # =============================================================================
 # 5. SUDO ACCESS

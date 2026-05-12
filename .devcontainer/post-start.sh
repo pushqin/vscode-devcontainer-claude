@@ -12,6 +12,16 @@ set -euo pipefail
 # --- Fix volume ownership ---
 chown -R node:node /home/node/.claude
 
+# --- Seed default Claude config (first-time only) ---
+# Volume is empty on first start; copy baked-in defaults so the user doesn't
+# have to re-configure plugins, theme, etc. To re-seed, delete the named volume
+# (claude-code-<workspace>-config) and rebuild.
+if [ ! -f /home/node/.claude/settings.json ] && [ -d /etc/claude-code-defaults ]; then
+    cp -rn /etc/claude-code-defaults/. /home/node/.claude/
+    chown -R node:node /home/node/.claude
+    echo "[seed] Default Claude config seeded into /home/node/.claude."
+fi
+
 # --- Git safe directory (mounted workspace has different owner) ---
 # GIT_CONFIG_GLOBAL points to this file (host gitconfig is blocked via /dev/null override)
 printf '[safe]\n\tdirectory = /workspace\n' > /home/node/.gitconfig-safe
