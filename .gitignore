@@ -1,0 +1,17 @@
+# Ignore everything by default
+*
+
+# Unignore this file
+!.gitignore
+
+# Unignore tracked files explicitly
+!README.md
+!.devcontainer/
+!.devcontainer/Dockerfile
+!.devcontainer/devcontainer.json
+!.devcontainer/init-firewall.sh
+!.devcontainer/managed-settings.json
+!.devcontainer/post-start.sh
+!.devcontainer/claude-config/
+!.devcontainer/claude-config/CLAUDE.md
+!.devcontainer/claude-config/settings.json
