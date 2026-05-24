@@ -13,6 +13,10 @@ set -euo pipefail
 chown -R vscode:vscode /home/vscode/.claude
 mkdir -p /home/vscode/.nuget/packages
 chown -R vscode:vscode /home/vscode/.nuget
+# Named volume mounts as root:root on first creation; zsh writes its history
+# here (see HISTFILE in isrotel-workspace/shell/zshrc.zsh).
+mkdir -p /commandhistory
+chown -R vscode:vscode /commandhistory
 
 # --- Seed default Claude config (first-time only) ---
 # Volume is empty on first start; copy baked-in defaults so the user doesn't
@@ -26,7 +30,7 @@ fi
 
 # --- Git safe directory (mounted workspace has different owner) ---
 # GIT_CONFIG_GLOBAL points to this file (host gitconfig is blocked via /dev/null override)
-printf '[safe]\n\tdirectory = /workspace\n' > /home/vscode/.gitconfig-safe
+printf '[safe]\n\tdirectory = /workspace/isrotel-workspace\n' > /home/vscode/.gitconfig-safe
 chown vscode:vscode /home/vscode/.gitconfig-safe
 
 # --- Immutable safeguard files ---
@@ -64,9 +68,9 @@ echo "[hardening] Setuid/setgid binaries stripped."
 # REPO_URL and REPO_PAT come from the host env via devcontainer.json.
 # sudo strips env vars, so read them from the vscode user's environment.
 REPO_URL=$(su - vscode -c 'echo $REPO_URL' 2>/dev/null || true)
-PAT_TOKEN=$(su - vscode -c 'echo $REPO_PAT' 2>/dev/null || true)
+REPO_PAT=$(su - vscode -c 'echo $REPO_PAT' 2>/dev/null || true)
 
-cd /workspace 2>/dev/null || true
+cd /workspace/isrotel-workspace 2>/dev/null || true
 
 if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     echo "Not inside a git repository yet — skipping git configuration."
@@ -74,7 +78,7 @@ if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     exit 0
 fi
 
-su - vscode -c "cd /workspace && git config --local credential.helper ''"
+su - vscode -c "GIT_CONFIG_GLOBAL=/home/vscode/.gitconfig-safe git -C /workspace/isrotel-workspace config --local credential.helper ''"
 
 if [ -z "$REPO_URL" ]; then
     echo ""
@@ -82,14 +86,14 @@ if [ -z "$REPO_URL" ]; then
     echo ""
 fi
 
-if [ -z "$PAT_TOKEN" ]; then
+if [ -z "$REPO_PAT" ]; then
     echo ""
     echo "  WARNING: REPO_PAT environment variable is not set."
     echo ""
 fi
 
-if [ -n "$REPO_URL" ] && [ -n "$PAT_TOKEN" ]; then
-    su - vscode -c "cd /workspace && git remote set-url origin 'https://oauth2:${PAT_TOKEN}@${REPO_URL}'"
+if [ -n "$REPO_URL" ] && [ -n "$REPO_PAT" ]; then
+    su - vscode -c "GIT_CONFIG_GLOBAL=/home/vscode/.gitconfig-safe git -C /workspace/isrotel-workspace remote set-url origin 'https://oauth2:${REPO_PAT}@${REPO_URL}'"
     echo "Git remote configured: https://oauth2:****@${REPO_URL}"
 else
     echo "Skipping git remote setup (missing repo URL or PAT token)."

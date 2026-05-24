@@ -109,7 +109,7 @@
     "HOMEBREW_GITHUB_API_TOKEN": ""
   },
   "mounts": [
-    "source=claude-code-${localWorkspaceFolderBasename}-bashhistory,target=/commandhistory,type=volume",
+    "source=claude-code-${localWorkspaceFolderBasename}-zshhistory,target=/commandhistory,type=volume",
     "source=claude-code-${localWorkspaceFolderBasename}-config,target=/home/vscode/.claude,type=volume",
     "source=claude-code-${localWorkspaceFolderBasename}-nuget,target=/home/vscode/.nuget/packages,type=volume",
     "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly"
@@ -120,7 +120,7 @@
     "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
     "DOTNET_NOLOGO": "1",
     "REPO_PAT": "${localEnv:REPO_PAT}",
-    "REPO_URL": "${localEnv:REPO_URL}"
+    "REPO_URL": "${localEnv:REPO_URL}",
   },
   "postCreateCommand": "rm -f ~/.npmrc ~/.yarnrc ~/.yarnrc.yml ~/.pip/pip.conf ~/.pypirc ~/.docker/config.json ~/.kube/config ~/.nuget/NuGet.Config 2>/dev/null; echo 'Host credential files cleaned'",
   "postStartCommand": "sudo /usr/local/bin/post-start.sh"

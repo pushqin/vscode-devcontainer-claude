@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 ARG CLAUDE_CODE_VERSION=latest
-ARG TZ=America/Los_Angeles
+ARG TZ=Israel
 ARG GIT_DELTA_VERSION=0.18.2
 ARG NODE_MAJOR=22
 ARG FZF_VERSION=0.56.3
@@ -44,7 +44,7 @@ RUN set -eux; \
 # Core tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
-    curl ca-certificates less procps sudo man-db unzip gnupg2 nano vim jq \
+    curl ca-certificates less procps sudo man-db unzip gnupg2 nano vim jq sqlite3 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Git & GitHub CLI
@@ -200,7 +200,7 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions \
 # Debian's package layout and sources files from /usr/share/doc/fzf/examples
 # which our upstream binary doesn't ship. We use `fzf --zsh` directly instead.
 RUN sed -i 's/plugins=(git)/plugins=(git gh docker dotnet colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting you-should-use)/' ${HOME}/.zshrc \
-    && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- fzf (native integration) ---\neval "$(fzf --zsh)"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n' >> ${HOME}/.zshrc
+    && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- fzf (native integration) ---\neval "$(fzf --zsh)"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n\n# --- Workspace shell init (logic in repo, per workspace CLAUDE.md) ---\n[ -f /workspace/isrotel-workspace/shell/zshrc.zsh ] && source /workspace/isrotel-workspace/shell/zshrc.zsh\n' >> ${HOME}/.zshrc
 
 
 # =============================================================================
