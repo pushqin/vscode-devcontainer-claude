@@ -1,0 +1,32 @@
+# Normalize text files: LF in the repo, LF on checkout everywhere
+* text=auto eol=lf
+
+# Scripts: enforce native line endings regardless of platform
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Visual Studio expects CRLF in solution files
+*.sln   text eol=crlf
+
+# Binaries
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.7z    binary
+*.dll   binary
+*.exe   binary
+*.pdb   binary
+*.snk   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary

@@ -3,6 +3,7 @@
 
 # Unignore this file
 !.gitignore
+!.gitattributes
 
 # Unignore tracked files explicitly
 !README.md
