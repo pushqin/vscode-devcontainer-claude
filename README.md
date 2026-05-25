@@ -28,9 +28,9 @@ Built on `mcr.microsoft.com/dotnet/sdk:10.0` with Node.js 22 LTS layered on for 
    - Azure DevOps: `dev.azure.com/org/project/_git/repo`
    - Self-hosted: `git.example.com/group/repo.git`
 
-3. Copy the `.devcontainer/` folder from this repo into your target .NET 10 project
+3. Get the `.devcontainer/` into your project — pick one of the two layouts in [Usage Layouts](#usage-layouts) below
 
-4. Open the project in VS Code and select "Reopen in Container"
+4. Open the project (or parent directory, for the multi-repo layout) in VS Code and select "Reopen in Container"
 
 5. Run `claude login` to authenticate, then `claude --dangerously-skip-permissions`
 
@@ -40,6 +40,39 @@ Built on `mcr.microsoft.com/dotnet/sdk:10.0` with Node.js 22 LTS layered on for 
    dotnet build
    dotnet run --project src/YourProject
    ```
+
+## Usage Layouts
+
+The `.devcontainer/` itself is project-agnostic — `post-start.sh` discovers every `/workspace/<repo>/.git` at runtime and the baked-in `.zshrc` sources any `/workspace/*-workspace/shell/zshrc.zsh` it finds. Two layouts work out of the box:
+
+### Mode A — Drop-in for a single project
+
+Copy the `.devcontainer/` folder into the root of an existing project repo:
+
+```
+my-project/                          ← open this in VS Code
+├── .devcontainer/                   ← copied from this repo
+├── .git/                            ← the project repo's own git
+├── src/
+└── ...
+```
+
+When "Reopen in Container" mounts the parent into `/workspace`, the project repo at `/workspace/` is the single git working tree; the discovery loop gives it a `safe.directory` entry. Optionally, place a `shell/zshrc.zsh` if you want auto-sourced shell init (rename your project folder to `<name>-workspace/` so the `*-workspace` glob picks it up — or skip).
+
+### Mode B — Multi-repo wrapper (workspace + sibling project repos)
+
+Use this repo (or a copy) as a per-project parent dir, and drop your workspace + project repos as siblings under it:
+
+```
+<project>-devcontainer/              ← open this in VS Code (the parent dir)
+├── .devcontainer/                   ← in sync with this upstream
+├── <project>-workspace/             ← planning workspace (its own git)
+│   └── shell/zshrc.zsh              ← auto-sourced by the *-workspace glob
+├── <project>-backend/               ← e.g. .NET, Java, Python (its own git)
+└── <project>-frontend/              ← e.g. Next.js, Vite, etc. (its own git)
+```
+
+Every sibling with a `.git/` gets a `safe.directory` entry. Any `*-workspace/shell/zshrc.zsh` is auto-sourced into the agent's shell. No per-project edits to `.devcontainer/` needed — the same image works for the next project by swapping the workspace + project siblings.
 
 ## What's in the Container
 
@@ -54,22 +87,20 @@ Built on `mcr.microsoft.com/dotnet/sdk:10.0` with Node.js 22 LTS layered on for 
 
 ## Port Forwarding
 
-The following ports are forwarded from the container to the host for local browser access:
+The following ports are pre-listed in `devcontainer.json:forwardPorts`. The .NET ports are intrinsic to this image; the rest are common dev-stack pre-fills carried as a convenience so you don't have to add them per project. Edit the array to suit — auto port forwarding is disabled, so only what's listed is forwarded.
 
-| Port | Purpose |
-|------|---------|
-| 5000 | ASP.NET Core / Kestrel HTTP default |
-| 5001 | ASP.NET Core / Kestrel HTTPS default |
-| 5277, 5278, 5279 | Umbraco `launchSettings.json` defaults |
-
-Auto port forwarding is disabled — only the ports listed above are forwarded. Add more in `.devcontainer/devcontainer.json` (`forwardPorts`) if your project uses different ones.
+| Port(s) | Common use | Why it's here |
+|---|---|---|
+| 5000, 5001 | ASP.NET Core / Kestrel (HTTP/HTTPS) | .NET 10 SDK default — intrinsic to this devcontainer |
+| 3000 | Node-stack dev server (Next.js, Vite, CRA, …) | Common pre-fill |
+| 5277, 5278, 5279 | Umbraco `launchSettings.json` defaults | Common pre-fill |
 
 ## Running Multiple Devcontainers
 
 You can run several isolated devcontainers in parallel (one per project) without conflicts:
 
 - Container name includes the project folder name: `Claude Code .NET 10 - <project-folder>`
-- Per-project volumes for bash history, Claude config, and the NuGet packages cache (`claude-code-<project>-bashhistory`, `…-config`, `…-nuget`)
+- Per-project volumes for zsh history, Claude config, and the NuGet packages cache (`claude-code-<project>-zshhistory`, `…-config`, `…-nuget`)
 - Each container needs its own `claude login` (configs are not shared)
 
 If you want different `REPO_PAT` / `REPO_URL` values per project, set them in a shell scoped to that project before launching VS Code, or use a `.env` loader. The host env vars are read at container start.
@@ -137,7 +168,7 @@ The token should be:
 | `.devcontainer/devcontainer.json` | Container config, env var sanitization, per-project volumes, port forwarding |
 | `.devcontainer/Dockerfile` | .NET 10 SDK base + Node + Claude Code + hardening |
 | `.devcontainer/init-firewall.sh` | Blocks dangerous host ports |
-| `.devcontainer/post-start.sh` | OS-level hardening + git remote setup (reads `REPO_URL` / `REPO_PAT` from env) |
+| `.devcontainer/post-start.sh` | OS-level hardening + git `safe.directory` discovery for every `/workspace/<repo>/.git` + per-repo `credential.helper ''` clear |
 | `.devcontainer/managed-settings.json` | Claude Code deny rules (baked into image) |
 
 ## Credential Isolation
@@ -156,7 +187,7 @@ The following are sanitized or blocked from entering the container:
 - Git host tokens (`GITHUB_TOKEN`, `GH_TOKEN`, `GITLAB_TOKEN`, etc.)
 - Host credential files (`~/.npmrc`, `~/.docker/config.json`, `~/.nuget/NuGet.Config`, etc.) deleted on container creation
 
-Only `REPO_PAT` and `REPO_URL` are explicitly forwarded to the container.
+Only `REPO_PAT` and `REPO_URL` are forwarded to the container — as a pass-through channel for the workspace's own remote-setup logic (e.g., rewriting `origin` with the PAT for an ADO repo). The devcontainer does not consume them itself; it's up to your workspace's `shell/zshrc.zsh` or a project-level script to use them.
 
 ## NuGet Configuration
 
