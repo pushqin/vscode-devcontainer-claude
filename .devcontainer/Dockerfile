@@ -200,7 +200,7 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions \
 # Debian's package layout and sources files from /usr/share/doc/fzf/examples
 # which our upstream binary doesn't ship. We use `fzf --zsh` directly instead.
 RUN sed -i 's/plugins=(git)/plugins=(git gh docker dotnet colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting you-should-use)/' ${HOME}/.zshrc \
-    && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- fzf (native integration) ---\neval "$(fzf --zsh)"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n\n# --- Workspace shell init (logic in repo, per workspace CLAUDE.md) ---\n[ -f /workspace/isrotel-workspace/shell/zshrc.zsh ] && source /workspace/isrotel-workspace/shell/zshrc.zsh\n' >> ${HOME}/.zshrc
+    && printf '\n# --- Modern CLI aliases ---\nalias ls="eza --icons --group-directories-first"\nalias ll="eza -la --icons --group-directories-first"\nalias tree="eza --tree --icons"\nalias cat="bat --paging=never"\nalias grep="rg"\nalias find="fd"\n\n# --- fzf (native integration) ---\neval "$(fzf --zsh)"\n\n# --- Zoxide (smart cd) ---\neval "$(zoxide init zsh)"\n\n# --- Workspace shell init (any *-workspace folder under /workspace) ---\nfor f in /workspace/*-workspace/shell/zshrc.zsh; do\n  [ -f "$f" ] && source "$f"\ndone\n' >> ${HOME}/.zshrc
 
 
 # =============================================================================

@@ -10,7 +10,7 @@
     }
   },
   "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
-  "forwardPorts": [5000, 5001, 5277, 5278, 5279],
+  "forwardPorts": [3000, 5000, 5001, 5277, 5278, 5279],
   "customizations": {
     "vscode": {
       "extensions": [
