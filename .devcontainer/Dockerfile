@@ -44,7 +44,7 @@ RUN set -eux; \
 # Core tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
-    curl ca-certificates less procps sudo man-db unzip gnupg2 nano vim jq sqlite3 \
+    curl ca-certificates less procps sudo man-db unzip gnupg2 nano vim jq sqlite3 libsecret-1-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Git & GitHub CLI
@@ -127,10 +127,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
-
 # Playwright MCP - install Chrome and its dependencies for browser-based testing
 RUN npx playwright install --with-deps chrome
+
+# Cache-bust: ADD re-fetches this registry metadata on every build, so the
+# install layer below is invalidated whenever a new version is published
+# (for "latest") while staying cached otherwise.
+ADD https://registry.npmjs.org/@anthropic-ai/claude-code/${CLAUDE_CODE_VERSION} /tmp/claude-code-version.json
+RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} \
+    && rm /tmp/claude-code-version.json
 
 
 # =============================================================================
