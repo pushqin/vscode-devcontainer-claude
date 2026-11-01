@@ -7,6 +7,7 @@
 
 # Unignore tracked files explicitly
 !README.md
+!CLAUDE.md
 !.devcontainer/
 !.devcontainer/Dockerfile
 !.devcontainer/devcontainer.json
