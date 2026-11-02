@@ -15,8 +15,11 @@ In each repo:
 4. For new work (a bug fix or feature), branch from the latest remote base branch, not from whatever is checked out locally:
    - repos with `versions/v_N` branches (`Isrotel.Umb`, `Isrotel.Services`, `Isrotel.Sunclub`, `Isrotel.Sceduler`): the highest `origin/versions/v_N`;
    - other repos: the remote default branch (e.g. `origin/main`, `origin/master`).
+5. `Isrotel.Umb`: work in the main checkout (`Isrotel.Umb/`), never in a separate worktree. The local IIS site `dev.isrotel.co.il` (127.0.0.1 in the hosts file) serves `Isrotel.Umb/Isrotel.UWeb`, so only the main checkout can be tested there. After switching branches, rebuild `Isrotel.UWeb/Isrotel.UWeb.csproj` in Debug.
 
 Say which branch and commit you're working from.
+
+The local dev site (the English `dev.isrotel.com`, startup failures, Git on Windows, browser quirks): `isrotel-workspace/project/knowledge-base/uweb-mapping/local-dev-site.md`.
 
 ## The vault is the home
 
