@@ -21,6 +21,15 @@ Say which branch and commit you're working from.
 
 The local dev site (the English `dev.isrotel.com`, startup failures, Git on Windows, browser quirks): `isrotel-workspace/project/knowledge-base/uweb-mapping/local-dev-site.md`.
 
+## Session title for Azure DevOps work items and PRs
+
+When the user gives a link to an Azure DevOps work item (`dev.azure.com/Isrotel/.../_workitems/edit/<id>`) or a pull request (`.../_git/<repo>/pullrequest/<id>`), or the session's work is about one, rename this session with `set_session_title` (`session_id: "self"`) as soon as you know the item's title:
+
+- work item (task, bug, user story, feature): `<id> - <short title>`, e.g. `9010 - Agent request passthrough to legacy agents`;
+- pull request: `PR <id> - <short title>`, e.g. `PR 4703 - Code review`.
+
+The short title is the item's title in ADO (or the PR's), trimmed to a few words in English; read it with the Azure DevOps tools, don't guess it. Several items in one session: name the main one. A fork or side session keeps the same title with a suffix that says what it does (`8504 - Bug (fork)`). Don't rename a session whose title the user set by hand unless they ask.
+
 ## The vault is the home
 
 Whatever folder this session started in, and whichever tool runs it (the desktop app on Windows or VS Code in the devcontainer), the results of the work go to the vault in `isrotel-workspace/`, under `isrotel-workspace/project/vault-conventions.md`: a dated section in this month's journal, `current-focus.md` when state changed, an ADR per decision, `#task` lines, knowledge-base updates. Do it without being asked.
